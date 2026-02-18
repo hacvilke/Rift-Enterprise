@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Enterprise — RSFR Transport</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#060912;
+  --bg1:#080d19;
+  --sur:rgba(255,255,255,0.035);
+  --sur2:rgba(255,255,255,0.06);
+  --brd:rgba(255,255,255,0.07);
+  --brd2:rgba(255,255,255,0.11);
+  --blue:#3b82f6;
+  --blue-l:#60a5fa;
+  --cyan:#06b6d4;
+  --green:#10b981;
+  --orange:#f97316;
+  --red:#ef4444;
+  --txt:#cdd8ef;
+  --txt2:#e8eef8;
+  --dim:rgba(180,200,240,0.38);
+  --dim2:rgba(180,200,240,0.55);
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* canvas */
+#c{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(59,130,246,.25);border-radius:2px}
+
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:100;
+  height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(16px,5vw,56px);
+  background:rgba(6,9,18,.82);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--brd);
+  animation:fadeY .45s ease both;
+}
+@keyframes fadeY{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+.logo{
+  display:flex;align-items:center;gap:9px;
+  text-decoration:none;
+  font-weight:600;font-size:.95rem;letter-spacing:-.01em;color:#fff;
+}
+.logo-mark{
+  width:26px;height:26px;border-radius:6px;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--cyan) 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:700;color:#fff;letter-spacing:0;flex-shrink:0;
+  box-shadow:0 0 16px rgba(59,130,246,.35);
+}
+.logo-name{color:#fff}
+.logo-sep{color:var(--brd2);margin:0 1px;font-weight:300}
+.logo-sub{color:var(--dim);font-weight:400;font-size:.88rem}
+
+.hdr-r{display:flex;align-items:center;gap:8px}
+
+.status-dot{
+  display:flex;align-items:center;gap:6px;
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.08em;
+  color:var(--green);
+  padding:3px 9px;border-radius:100px;
+  background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.17);
+}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}55%{opacity:.2}}
+
+.hdr-tag{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.06em;
+  color:var(--dim);padding:3px 9px;border-radius:100px;
+  background:var(--sur);border:1px solid var(--brd);
+}
+@media(max-width:440px){.hdr-tag{display:none}}
+
+/* ── HERO ── */
+.hero{
+  position:relative;z-index:2;
+  max-width:640px;margin:0 auto;text-align:center;
+  padding:clamp(56px,9vw,108px) clamp(20px,5vw,32px) clamp(40px,6vw,68px);
+}
+
+.hero-label{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.14em;
+  color:var(--blue-l);
+  border:1px solid rgba(96,165,250,.18);
+  border-radius:100px;padding:4px 12px;
+  margin-bottom:22px;
+  background:rgba(59,130,246,.06);
+  opacity:0;animation:up .5s .08s cubic-bezier(.22,1,.36,1) forwards;
+}
+.hero-label::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--blue-l);animation:blink 2s infinite}
+
+h1{
+  font-size:clamp(2.4rem,7vw,4.8rem);
+  font-weight:700;
+  line-height:1.02;
+  letter-spacing:-.04em;
+  opacity:0;animation:up .6s .16s cubic-bezier(.22,1,.36,1) forwards;
+}
+.h1-a{display:block;color:#fff}
+.h1-b{
+  display:block;
+  background:linear-gradient(90deg,var(--blue-l) 0%,var(--cyan) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+.hero-desc{
+  margin-top:14px;
+  font-size:clamp(.82rem,1.7vw,.93rem);
+  color:var(--dim);line-height:1.7;font-weight:400;
+  opacity:0;animation:up .5s .26s cubic-bezier(.22,1,.36,1) forwards;
+}
+
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ── WRAP ── */
+.wrap{
+  position:relative;z-index:2;
+  max-width:720px;margin:0 auto clamp(56px,8vw,96px);
+  padding:0 clamp(12px,4vw,24px);
+}
+
+/* ── FORM CARD ── */
+.card{
+  background:rgba(10,15,28,.72);
+  border:1px solid var(--brd2);
+  border-radius:14px;
+  padding:clamp(20px,4vw,36px);
+  backdrop-filter:blur(36px);-webkit-backdrop-filter:blur(36px);
+  position:relative;overflow:hidden;
+  box-shadow:0 32px 72px rgba(0,0,0,.45),0 0 0 1px rgba(59,130,246,.04);
+  opacity:0;animation:up .6s .38s cubic-bezier(.22,1,.36,1) forwards;
+}
+/* top accent */
+.card::before{
+  content:'';position:absolute;top:0;left:20%;right:20%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(96,165,250,.45),rgba(6,182,212,.3),transparent);
+}
+
+/* card header */
+.card-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:clamp(18px,3vw,28px);flex-wrap:wrap;gap:8px;
+}
+.card-title{font-size:.88rem;font-weight:600;color:#fff;letter-spacing:-.01em}
+.card-hint{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.08em;
+  color:var(--dim);background:var(--sur);border:1px solid var(--brd);
+  border-radius:100px;padding:3px 10px;
+}
+
+/* ── FIELDS ── */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,2vw,14px)}
+@media(max-width:500px){.row2{grid-template-columns:1fr}}
+
+.fg{display:flex;flex-direction:column;gap:5px}
+
+.fg label{
+  font-size:.72rem;font-weight:500;color:var(--dim2);
+  letter-spacing:.005em;display:flex;align-items:center;gap:5px;
+}
+.fg label .ico{font-size:.8rem;opacity:.6}
+
+input,select{
+  background:rgba(255,255,255,.038);
+  border:1px solid var(--brd);
+  color:var(--txt);
+  font-family:'Inter',sans-serif;
+  font-size:.855rem;font-weight:400;
+  padding:9px 12px;
+  border-radius:9px;
+  outline:none;width:100%;
+  appearance:none;-webkit-appearance:none;
+  transition:border-color .18s,background .18s,box-shadow .18s,color .18s;
+  line-height:1.4;
+}
+input::placeholder{color:rgba(180,200,240,.18)}
+input:hover,select:hover{border-color:rgba(255,255,255,.11);background:rgba(255,255,255,.05)}
+input:focus{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.05);box-shadow:0 0 0 3px rgba(59,130,246,.1);color:#fff}
+select:focus{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.05);box-shadow:0 0 0 3px rgba(59,130,246,.1);color:#fff}
+
+.sw{position:relative}
+.sw::after{
+  content:'';position:absolute;right:11px;top:50%;transform:translateY(-50%);
+  border-left:4px solid transparent;border-right:4px solid transparent;
+  border-top:4.5px solid var(--dim);pointer-events:none;transition:border-top-color .18s;
+}
+.sw:focus-within::after{border-top-color:var(--blue-l)}
+select{padding-right:32px;cursor:pointer}
+select option{background:#0c1525;color:var(--txt)}
+
+/* divider */
+.divr{
+  display:flex;align-items:center;gap:10px;
+  margin:clamp(12px,2vw,18px) 0;
+}
+.divr-line{flex:1;height:1px;background:var(--brd)}
+.divr-txt{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.12em;color:var(--dim);white-space:nowrap;
+}
+
+/* ── PRICE ROW ── */
+.price-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;
+  padding:14px 16px;
+  background:rgba(59,130,246,.04);
+  border:1px solid rgba(59,130,246,.1);
+  border-radius:10px;
+  margin-bottom:clamp(10px,2vw,16px);
+  transition:border-color .3s,background .3s,box-shadow .3s;
+}
+.price-row.lit{
+  border-color:rgba(59,130,246,.22);
+  background:rgba(59,130,246,.07);
+  box-shadow:0 0 32px rgba(59,130,246,.06);
+}
+.route-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.1em;color:var(--dim);margin-bottom:5px;
+}
+#route-txt{
+  font-size:.82rem;color:var(--dim2);
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+}
+#route-txt .rl{color:#fff;font-weight:500}
+.rarr{color:var(--orange);font-size:.78rem}
+
+.fare-side{text-align:right;flex-shrink:0}
+.fare-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.1em;color:var(--dim);margin-bottom:4px;
+}
+#price{
+  font-size:clamp(1.5rem,4vw,2.1rem);
+  font-weight:700;
+  color:var(--green);
+  letter-spacing:-.03em;
+  transition:color .25s;
+  font-family:'Inter',sans-serif;
+}
+#price.counting{color:var(--blue-l)}
+
+@media(max-width:360px){.price-row{flex-direction:column}.fare-side{text-align:left}}
+
+/* discord note */
+.note{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  background:rgba(88,101,242,.06);
+  border:1px solid rgba(88,101,242,.12);
+  border-radius:9px;
+  font-size:.78rem;color:var(--dim2);line-height:1.5;
+  margin-bottom:clamp(10px,2vw,16px);
+}
+.note-icon{font-size:.9rem;flex-shrink:0;opacity:.8}
+.note strong{color:#8899ff;font-weight:500}
+
+/* ── BUTTON ── */
+.btn{
+  width:100%;position:relative;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--cyan) 100%);
+  color:#fff;border:none;
+  font-family:'Inter',sans-serif;font-weight:600;
+  font-size:.88rem;letter-spacing:.02em;
+  padding:clamp(12px,2.5vw,14px) 24px;
+  border-radius:9px;cursor:pointer;overflow:hidden;
+  transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s,opacity .2s;
+}
+.btn-shim{
+  position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);
+  transform:translateX(-130%);transition:transform .55s ease;
+}
+.btn:hover .btn-shim{transform:translateX(130%)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(59,130,246,.28)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-inner{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px}
+
+.spin{
+  width:15px;height:15px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.25);border-top-color:#fff;
+  animation:spin .6s linear infinite;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── LOCATIONS ── */
+.locs{
+  position:relative;z-index:2;
+  max-width:720px;margin:0 auto clamp(64px,9vw,100px);
+  padding:0 clamp(12px,4vw,24px);
+}
+.locs-hdr{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:clamp(16px,3vw,24px);flex-wrap:wrap;gap:8px;
+}
+.locs-title{
+  font-size:clamp(1.1rem,3vw,1.45rem);
+  font-weight:700;color:#fff;letter-spacing:-.02em;
+}
+.locs-ct{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.1em;color:var(--dim);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));
+  gap:clamp(6px,1.2vw,9px);
+}
+
+.lc{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 14px;
+  background:var(--sur);
+  border:1px solid var(--brd);
+  border-radius:9px;
+  cursor:default;
+  position:relative;overflow:hidden;
+  opacity:0;transform:translateY(12px);
+  transition:border-color .22s,background .22s,box-shadow .22s;
+}
+.lc::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(59,130,246,.05),transparent);
+  opacity:0;transition:opacity .22s;
+}
+.lc:hover::before{opacity:1}
+.lc:hover{border-color:rgba(59,130,246,.2);background:rgba(59,130,246,.04)}
+.lc.vis{
+  opacity:1;transform:none;
+  transition:opacity .45s cubic-bezier(.22,1,.36,1),transform .45s cubic-bezier(.22,1,.36,1),border-color .22s,background .22s,box-shadow .22s;
+}
+
+.lc-name{font-size:.82rem;font-weight:500;color:var(--txt2);line-height:1.3}
+.lc-zone{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  letter-spacing:.06em;color:var(--dim);margin-top:2px;
+}
+.lc-price{
+  font-size:.88rem;font-weight:600;
+  color:var(--orange);white-space:nowrap;flex-shrink:0;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ── FOOTER ── */
+footer{
+  position:relative;z-index:2;
+  text-align:center;
+  padding:clamp(20px,3vw,32px) 20px;
+  border-top:1px solid var(--brd);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.6rem;letter-spacing:.1em;color:var(--dim);
+}
+footer span{color:rgba(96,165,250,.5)}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:clamp(14px,3vw,24px);right:clamp(14px,3vw,24px);
+  max-width:min(320px,calc(100vw - 28px));
+  background:rgba(8,13,24,.96);
+  border:1px solid rgba(16,185,129,.25);
+  border-radius:10px;
+  padding:11px 15px;z-index:500;
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.04em;
+  color:var(--green);
+  display:flex;align-items:center;gap:9px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 16px 48px rgba(0,0,0,.5);
+  transform:translateY(calc(100% + 20px));opacity:0;
+  transition:transform .4s cubic-bezier(.22,1,.36,1),opacity .4s;
+}
+#toast.err{color:var(--red);border-color:rgba(239,68,68,.25)}
+#toast.show{transform:translateY(0);opacity:1}
+.tdot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;animation:blink 1.5s infinite}
+
+/* ── PAYMENT MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(4,7,15,.75);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+
+.modal{
+  background:#09101f;
+  border:1px solid var(--brd2);
+  border-radius:16px;
+  padding:clamp(24px,5vw,40px);
+  max-width:460px;width:100%;
+  position:relative;
+  box-shadow:0 40px 80px rgba(0,0,0,.7),0 0 0 1px rgba(59,130,246,.06);
+  transform:scale(.95) translateY(10px);
+  transition:transform .35s cubic-bezier(.22,1,.36,1),opacity .35s;
+  opacity:0;
+}
+.modal-overlay.open .modal{transform:scale(1) translateY(0);opacity:1}
+
+/* top line */
+.modal::before{
+  content:'';position:absolute;top:0;left:15%;right:15%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(16,185,129,.55),transparent);
+}
+
+.modal-icon{
+  width:46px;height:46px;border-radius:12px;
+  background:rgba(16,185,129,.1);
+  border:1px solid rgba(16,185,129,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;margin-bottom:18px;
+}
+
+.modal h2{
+  font-size:1.05rem;font-weight:700;color:#fff;
+  letter-spacing:-.02em;margin-bottom:6px;
+}
+.modal-sub{font-size:.82rem;color:var(--dim2);line-height:1.6;margin-bottom:22px}
+
+/* payment command box */
+.cmd-box{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--brd2);
+  border-radius:10px;
+  padding:14px 16px;
+  margin-bottom:20px;
+  position:relative;
+}
+.cmd-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.1em;color:var(--dim);margin-bottom:8px;
+}
+.cmd-text{
+  font-family:'JetBrains Mono',monospace;
+  font-size:clamp(.8rem,2vw,.9rem);
+  color:#fff;font-weight:500;
+  line-height:1.5;word-break:break-all;
+}
+.cmd-text .cmd-blue{color:var(--blue-l)}
+.cmd-text .cmd-green{color:var(--green);font-weight:700}
+.cmd-text .cmd-orange{color:var(--orange)}
+
+.copy-btn{
+  position:absolute;top:10px;right:10px;
+  background:var(--sur2);border:1px solid var(--brd2);
+  color:var(--dim2);border-radius:6px;
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.06em;
+  padding:4px 9px;cursor:pointer;
+  transition:background .2s,color .2s,border-color .2s;
+}
+.copy-btn:hover{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);color:var(--blue-l)}
+.copy-btn.copied{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:var(--green)}
+
+/* breakdown */
+.breakdown{
+  display:flex;flex-direction:column;gap:6px;
+  padding:12px 14px;
+  background:var(--sur);border:1px solid var(--brd);border-radius:9px;
+  margin-bottom:20px;font-size:.8rem;
+}
+.bk-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bk-lbl{color:var(--dim2)}
+.bk-val{color:var(--txt2);font-weight:500;text-align:right}
+.bk-row.total .bk-lbl{color:var(--txt2);font-weight:600;font-size:.85rem}
+.bk-row.total .bk-val{color:var(--green);font-weight:700;font-size:.95rem}
+.bk-sep{height:1px;background:var(--brd);margin:2px 0}
+
+.modal-close{
+  width:100%;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--cyan) 100%);
+  color:#fff;border:none;
+  font-family:'Inter',sans-serif;font-weight:600;font-size:.88rem;
+  padding:12px;border-radius:9px;cursor:pointer;
+  transition:transform .2s,box-shadow .2s;letter-spacing:.01em;
+}
+.modal-close:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(59,130,246,.25)}
+.modal-close:active{transform:none}
+
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<!-- HEADER -->
+<header>
+  <a class="logo" href="#">
+    <div class="logo-mark">R</div>
+    <span class="logo-name">Rift</span>
+    <span class="logo-sep">/</span>
+    <span class="logo-sub">Enterprise</span>
+  </a>
+  <div class="hdr-r">
+    <div class="status-dot"><div class="sdot"></div>SWFL ONLINE</div>
+    <div class="hdr-tag">ROBLOX · ECO</div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-label">SWFL DELIVERY NETWORK</div>
+  <h1>
+    <span class="h1-a">Request</span>
+    <span class="h1-b">a Ride</span>
+  </h1>
+  <p class="hero-desc">Premium transport across South West Florida.<br>Your driver is notified on Discord the moment you dispatch.</p>
+</section>
+
+<!-- FORM -->
+<div class="wrap">
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Dispatch Order</div>
+      </div>
+      <div class="card-hint">SWFL · ROLEPLAY</div>
+    </div>
+
+    <div class="row2">
+      <div class="fg">
+        <label><span class="ico">👤</span> Roblox Username</label>
+        <input id="uname" type="text" placeholder="YourRobloxName" maxlength="40" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label><span class="ico">💬</span> Discord Username</label>
+        <input id="disc" type="text" placeholder="username" maxlength="40" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="divr"><div class="divr-line"></div><div class="divr-txt">ROUTE</div><div class="divr-line"></div></div>
+
+    <div class="row2">
+      <div class="fg">
+        <label><span class="ico">📍</span> Pickup</label>
+        <div class="sw">
+          <select id="pickup" onchange="calc()">
+            <option value="">— Select location —</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label><span class="ico">🏁</span> Drop-off</label>
+        <div class="sw">
+          <select id="dropoff" onchange="calc()">
+            <option value="">— Select location —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="divr" style="margin-top:clamp(12px,2vw,18px)"><div class="divr-line"></div><div class="divr-txt">FARE</div><div class="divr-line"></div></div>
+
+    <div class="price-row" id="prow">
+      <div>
+        <div class="route-lbl">ROUTE</div>
+        <div id="route-txt">Select pickup &amp; drop-off above</div>
+      </div>
+      <div class="fare-side">
+        <div class="fare-lbl">TOTAL</div>
+        <div id="price">— ECO</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">⚡</div>
+      <div>Your driver will be pinged via <strong>Discord webhook</strong> instantly. After dispatch, you'll receive payment instructions.</div>
+    </div>
+
+    <button class="btn" id="sbtn" onclick="submit()">
+      <div class="btn-shim"></div>
+      <div class="btn-inner"><span id="btxt">Dispatch Driver</span></div>
+    </button>
+  </div>
+</div>
+
+<!-- LOCATIONS -->
+<div class="locs">
+  <div class="locs-hdr">
+    <div class="locs-title">All Locations</div>
+    <div class="locs-ct" id="lct"></div>
+  </div>
+  <div class="grid" id="lgrid"></div>
+</div>
+
+<footer><span>Rift Enterprise</span> &nbsp;·&nbsp; SWFL Roblox Roleplay &nbsp;·&nbsp; ECO Economy</footer>
+
+<!-- TOAST -->
+<div id="toast"><div class="tdot"></div><span id="tmsg"></span></div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-icon">✅</div>
+    <h2>Driver Dispatched!</h2>
+    <p class="modal-sub">Your request is live. Now send your payment in-game using the command below in Discord.</p>
+
+    <div class="cmd-box">
+      <div class="cmd-lbl">UNBELIEVABOAT PAYMENT COMMAND</div>
+      <div class="cmd-text" id="cmd-display">—</div>
+      <button class="copy-btn" id="copybtn" onclick="copyCmd()">COPY</button>
+    </div>
+
+    <div class="breakdown" id="breakdown"></div>
+
+    <button class="modal-close" onclick="closeModal(null)">Got it — I'll send payment</button>
+  </div>
+</div>
+
+<script>
+/* ─── DATA ─────────────────────────────────── */
+const WEBHOOK = "https://discord.com/api/webhooks/1472719300706959596/DMrufWFvmulDX0qKN-NRfottIfZe5flJPphnMDGCuGiS7AU6WzkRcHw5OzfJMct8iyuO";
+
+const LOCS = [
+  {name:"Fire Station",         zone:"EMERGENCY",    p:3500},
+  {name:"Police Station",       zone:"EMERGENCY",    p:4000},
+  {name:"LHS Hospital",         zone:"MEDICAL",      p:7500},
+  {name:"Bubmart",              zone:"RETAIL",       p:2500},
+  {name:"Automart",             zone:"RETAIL",       p:1500},
+  {name:"CVC Pharmacy",         zone:"RETAIL",       p:2000},
+  {name:"Starblocks",           zone:"FOOD & DRINK", p:1000},
+  {name:"Dippin' Donuts",       zone:"FOOD & DRINK", p:1500},
+  {name:"Jeff's Pizza",         zone:"FOOD & DRINK", p:3000},
+  {name:"McBloxxer's",          zone:"FOOD & DRINK", p:2000},
+  {name:"Seaside Bar and Grill",zone:"FOOD & DRINK", p:6000},
+  {name:"StudRac",              zone:"AUTOMOTIVE",   p:8500},
+  {name:"Sparrow Motorsports",  zone:"AUTOMOTIVE",   p:9000},
+  {name:"Sunset Performance",   zone:"AUTOMOTIVE",   p:10000},
+  {name:"Sussy's Mechanic Shop",zone:"AUTOMOTIVE",   p:4500},
+  {name:"Fintech",              zone:"BUSINESS",     p:5500},
+  {name:"RW Bank",              zone:"BUSINESS",     p:5000},
+  {name:"Vorzen",               zone:"BUSINESS",     p:6500},
+  {name:"Aqualand",             zone:"LEISURE",      p:7000},
+  {name:"FL Fitness",           zone:"LEISURE",      p:3000},
+  {name:"Mirage",               zone:"LEISURE",      p:8000},
+  {name:"Gulf Paradise Condos", zone:"RESIDENTIAL",  p:9500},
+  {name:"Coconut Lakes",  zone:"RESIDENTIAL",  p:4000},
+{name:"Intersection",   zone:"TRANSIT",      p:2500},
+];
+
+/* ─── CANVAS ────────────────────────────────── */
+(()=>{
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  let W,H,mx=-9999,my=-9999;
+  const resize=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight};
+  resize(); window.addEventListener('resize',resize);
+  window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY},{passive:true});
+  window.addEventListener('touchmove',e=>{mx=e.touches[0].clientX;my=e.touches[0].clientY},{passive:true});
+
+  const cols=['#3b82f6','#06b6d4','#ffffff'];
+  const pts=Array.from({length:55},()=>({
+    x:Math.random()*1400,y:Math.random()*900,
+    vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.18,
+    r:Math.random()*1.2+.2,a:Math.random()*.28+.05,
+    c:cols[Math.floor(Math.random()*cols.length)]
+  }));
+
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+
+    // ambient glow
+    const g=ctx.createRadialGradient(W/2,H*.28,0,W/2,H*.28,W*.65);
+    g.addColorStop(0,'rgba(30,60,140,.12)');g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+    // mouse glow
+    if(mx>0){
+      const m=ctx.createRadialGradient(mx,my,0,mx,my,180);
+      m.addColorStop(0,'rgba(59,130,246,.04)');m.addColorStop(1,'transparent');
+      ctx.fillStyle=m;ctx.fillRect(0,0,W,H);
+    }
+
+    pts.forEach((p,i)=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<-5)p.x=W+5;if(p.x>W+5)p.x=-5;
+      if(p.y<-5)p.y=H+5;if(p.y>H+5)p.y=-5;
+
+      ctx.globalAlpha=p.a;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.c;ctx.fill();
+
+      for(let j=i+1;j<pts.length;j++){
+        const q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<100){
+          ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);
+          ctx.strokeStyle=`rgba(59,130,246,${.035*(1-d/100)})`;
+          ctx.lineWidth=.5;ctx.stroke();
+        }
+      }
+    });
+    ctx.globalAlpha=1;
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ─── SELECTS ───────────────────────────────── */
+(()=>{
+  const pk=document.getElementById('pickup'),dp=document.getElementById('dropoff');
+  LOCS.forEach(l=>{
+    pk.add(new Option(`${l.name}  ·  ${l.p.toLocaleString()} ECO`,l.name));
+    dp.add(new Option(`${l.name}  ·  ${l.p.toLocaleString()} ECO`,l.name));
+  });
+})();
+
+function getLoc(n){return LOCS.find(l=>l.name===n)}
+
+/* ─── PRICE COUNTER ─────────────────────────── */
+let lastP=0;
+function animNum(el,from,to){
+  const steps=24,dur=500;let s=0;
+  el.classList.add('counting');
+  const iv=setInterval(()=>{
+    s++;const t=s/steps;
+    const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    el.textContent=`${Math.round(from+(to-from)*e).toLocaleString()} ECO`;
+    if(s>=steps){clearInterval(iv);el.textContent=`${to.toLocaleString()} ECO`;el.classList.remove('counting')}
+  },dur/steps);
+}
+
+function calc(){
+  const pv=document.getElementById('pickup').value;
+  const dv=document.getElementById('dropoff').value;
+  const pr=document.getElementById('price');
+  const rt=document.getElementById('route-txt');
+  const row=document.getElementById('prow');
+
+  if(!pv||!dv){pr.textContent='— ECO';rt.textContent='Select pickup & drop-off above';row.classList.remove('lit');lastP=0;return}
+  if(pv===dv){pr.textContent='— ECO';rt.innerHTML='<span style="color:var(--orange)">⚠ Same location selected</span>';row.classList.remove('lit');lastP=0;return}
+
+  const f=getLoc(pv),d=getLoc(dv),tot=f.p+d.p;
+  rt.innerHTML=`<span class="rl">${pv}</span><span class="rarr">→</span><span class="rl">${dv}</span>`;
+  row.classList.add('lit');
+  animNum(pr,lastP,tot);
+  lastP=tot;
+}
+
+/* ─── TOAST ─────────────────────────────────── */
+let tt;
+function toast(msg,err=false){
+  const el=document.getElementById('toast');
+  document.getElementById('tmsg').textContent=msg;
+  el.className=(err?'err ':'')+' show';
+  clearTimeout(tt);tt=setTimeout(()=>el.className=err?'err':'',4000);
+}
+
+/* ─── MODAL ─────────────────────────────────── */
+let cmdStr='';
+
+function openModal(from,to,total,uname,disc){
+  cmdStr=`!pay @wwan1 (Super1) ${total}`;
+
+  // payment command display
+  document.getElementById('cmd-display').innerHTML=
+    `<span class="cmd-blue">!pay</span> <span class="cmd-orange">@wwan1 (Super1)</span> <span class="cmd-green">${total.toLocaleString()}</span>`;
+
+  // breakdown
+  const bk=document.getElementById('breakdown');
+  bk.innerHTML=`
+    <div class="bk-row"><span class="bk-lbl">👤 Roblox</span><span class="bk-val">${uname}</span></div>
+    <div class="bk-row"><span class="bk-lbl">📍 Pickup — ${from.name}</span><span class="bk-val">${from.p.toLocaleString()} ECO</span></div>
+    <div class="bk-row"><span class="bk-lbl">🏁 Drop-off — ${to.name}</span><span class="bk-val">${to.p.toLocaleString()} ECO</span></div>
+    <div class="bk-sep"></div>
+    <div class="bk-row total"><span class="bk-lbl">Total Due</span><span class="bk-val">${total.toLocaleString()} ECO</span></div>
+  `;
+
+  document.getElementById('copybtn').textContent='COPY';
+  document.getElementById('copybtn').classList.remove('copied');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal(e){
+  if(e&&e.target!==document.getElementById('overlay'))return;
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function copyCmd(){
+  navigator.clipboard.writeText(cmdStr).then(()=>{
+    const b=document.getElementById('copybtn');
+    b.textContent='COPIED ✓';b.classList.add('copied');
+    setTimeout(()=>{b.textContent='COPY';b.classList.remove('copied')},2000);
+  }).catch(()=>{
+    // fallback
+    const ta=document.createElement('textarea');ta.value=cmdStr;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);
+    const b=document.getElementById('copybtn');
+    b.textContent='COPIED ✓';b.classList.add('copied');
+    setTimeout(()=>{b.textContent='COPY';b.classList.remove('copied')},2000);
+  });
+}
+
+/* ─── SUBMIT ────────────────────────────────── */
+async function submit(){
+  const uname=document.getElementById('uname').value.trim();
+  const disc=document.getElementById('disc').value.trim();
+  const pv=document.getElementById('pickup').value;
+  const dv=document.getElementById('dropoff').value;
+
+  if(!uname)return toast('Enter your Roblox username',true);
+  if(!disc)return toast('Enter your Discord username',true);
+  if(!pv)return toast('Select a pickup location',true);
+  if(!dv)return toast('Select a drop-off location',true);
+  if(pv===dv)return toast('Pickup and drop-off must differ',true);
+
+  const f=getLoc(pv),d=getLoc(dv),tot=f.p+d.p;
+  const btn=document.getElementById('sbtn'),btxt=document.getElementById('btxt');
+  btn.disabled=true;
+  btxt.innerHTML='<span class="spin"></span> Dispatching...';
+
+  const ts=new Date().toLocaleString('en-US',{timeZone:'America/New_York'});
+
+  const body={embeds:[{
+    title:'🚗 New Rift Enterprise Order',color:0x3b82f6,
+    fields:[
+      {name:'👤 Roblox',value:`\`${uname}\``,inline:true},
+      {name:'💬 Discord',value:`\`${disc}\``,inline:true},
+      {name:'\u200b',value:'\u200b',inline:false},
+      {name:'📍 Pickup',value:`**${pv}**\n${f.p.toLocaleString()} ECO`,inline:true},
+      {name:'🏁 Drop-off',value:`**${dv}**\n${d.p.toLocaleString()} ECO`,inline:true},
+      {name:'\u200b',value:'\u200b',inline:false},
+      {name:'💰 Fare',value:`**${tot.toLocaleString()} ECO**`,inline:true},
+      {name:'⏰ Time (ET)',value:ts,inline:true}
+    ],
+    footer:{text:'Rift Enterprise · SWFL Roleplay Transport'}
+  }]};
+
+  try{
+    const res=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok&&res.status!==204)throw 0;
+  }catch{}
+
+  btn.disabled=false;btxt.textContent='Dispatch Driver';
+
+  // clear fields
+  ['uname','disc','pickup','dropoff'].forEach(id=>document.getElementById(id).value='');
+  calc();
+
+  // show payment modal
+  openModal(f,d,tot,uname,disc);
+}
+
+/* ─── LOCATION CARDS ────────────────────────── */
+(()=>{
+  const grid=document.getElementById('lgrid');
+  document.getElementById('lct').textContent=`${LOCS.length} locations`;
+  LOCS.forEach((l,i)=>{
+    const el=document.createElement('div');
+    el.className='lc';
+    el.innerHTML=`<div><div class="lc-name">${l.name}</div><div class="lc-zone">${l.zone}</div></div><div class="lc-price">${l.p.toLocaleString()} ECO</div>`;
+    grid.appendChild(el);
+    const obs=new IntersectionObserver(en=>{
+      en.forEach(e=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('vis'),(i%4)*55);obs.disconnect()}});
+    },{threshold:.1});
+    obs.observe(el);
+  });
+})();
+</script>
+</body>
+</html>
